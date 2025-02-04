@@ -63,7 +63,11 @@ If you have been given **trial credentials**, include them in your request heade
 
 ### **Option 2: Host Your Own Gateway via Docker**
 
-If you prefer to run the Gateway system locally, follow the setup instructions in Setting Up your Docker Image. After completing the setup, you can connect to your locally running API server:
+<Tip>
+  To setup the Docker Image, head to our guide on [Setting Up Your Gateway Docker Image](https://truthsystems.mintlify.app/DockerImage)
+</Tip>
+
+After completing the setup, you can connect to your locally running API server:
 
 ```python
 client = Client.from_url("http://localhost:5000")
