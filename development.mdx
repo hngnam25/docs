@@ -1,106 +1,164 @@
 ---
-title: 'Development'
-description: 'Preview changes locally to update your docs'
+description: "This guide provides an overview on how you can quickly deploy Truth Systems Gateway on to your RAG-based application after gaining access to our Docker Image "
+title: "Overview"
 ---
 
-<Info>
-  **Prerequisite**: Please install Node.js (version 19 or higher) before proceeding.
-</Info>
+## 1. Prerequisites
 
-Follow these steps to install and run Mintlify on your operating system:
+1. **Docker** installed and running on your system.
 
-**Step 1**: Install Mintlify:
+   * Refer to [Docker Docs]() to install Docker on your platform.
 
-<CodeGroup>
+2. **Python 3.7+** and `pip` installed.
 
-  ```bash npm
-  npm i -g mintlify
-  ```
+   * You will need Python to run the SDK code.
 
-```bash yarn
-yarn global add mintlify
+3. (Optional) **Docker Compose**, if you prefer to manage multiple containers with a single file.
+
+## 2. Understanding the Gateway Architecture
+
+Gateway consists of two main components:
+
+1. **API Server**
+
+   * A Flask+Gunicorn web server that receives REST requests on a specific port (e.g., `:5000`).
+
+   * Forwards requests to the Inference Server.
+
+2. **Inference Server**
+
+   * Handles the heavy lifting: retrieval + re-ranking of evidence and final contradiction checks.
+
+   * Communicates with the API server via an internal endpoint or shared network.
+
+### Typical Flow
+
+1. **Client / Python SDK** sends a request to the **API Server**.
+
+2. **API Server** validates the input, passes it to the **Inference Server**.
+
+3. **Inference Server**:
+
+   * Retrieves relevant evidence.
+
+   * Reranks evidence based on relevance.
+
+   * Determines if the evidence supports or contradicts the claim.
+
+4. **API Server** returns a structured response to the **Client**.
+
+## 3. Setting Up:
+
+You have two options for connecting the **Python SDK** to a running instance of Gateway:
+
+### **Option 1: Use the Trial API Hosted by Truth Systems**
+
+For convenience, we provide a **trial API** that you can use without setting up Docker. Simply use the provided URL:
+
+```python
+client = Client.from_url("https://api.truthsystems.com")
 ```
 
-</CodeGroup>
+If you have been given **trial credentials**, include them in your request headers when making API calls.
 
-**Step 2**: Navigate to the docs directory (where the `mint.json` file is located) and execute the following command:
+### **Option 2: Host Your Own Gateway via Docker**
 
-```bash
-mintlify dev
+If you prefer to run the Gateway system locally, follow the setup instructions in Setting Up your Docker Image. After completing the setup, you can connect to your locally running API server:
+
+```python
+client = Client.from_url("http://localhost:5000")
 ```
 
-A local preview of your documentation will be available at `http://localhost:3000`.
+**If you have modified the default port or are running on a remote server, adjust the URL accordingly.**
 
-### Custom Ports
 
-By default, Mintlify uses port 3000. You can customize the port Mintlify runs on by using the `--port` flag. To run Mintlify on port 3333, for instance, use this command:
 
-```bash
-mintlify dev --port 3333
+## 4. Python SDK:
+
+On top of this backend, a **Python SDK** offers a high-level interface to interact with Gateway programmatically.
+
+### Key Classes
+
+* **`Client`**
+  Creates an object that communicates with the Gateway’s API Server. It exposes methods like `judge()` to submit claims and evidence.
+
+* **`Verdict`**
+  An enumeration of possible judgments about a claim (e.g., `SUPPORTS`, `CONTRADICTS`, or `NEUTRAL`).
+
+* **`TextSource`**
+  Represents a piece of textual evidence.
+
+* **`TextInfluence`**
+  Provides additional context on how a piece of text influenced the verdict (e.g., specific substring indices).
+
+### Example Usage
+
+```python
+from truthsys import (
+    Client,          # or AsyncClient
+    TextInfluence,
+    TextSource,
+    Verdict,
+)
+
+# 1. Instantiate the client
+client = Client.from_url("http://localhost:5000")
+
+# 2. Create text sources (evidence)
+sources = [
+    TextSource.from_text("I have a cat"),
+    TextSource.from_text("I only have one pet"),
+    TextSource.from_text("My pet is called Sally"),
+]
+
+# 3. Judge the claim
+ruling = client.judge(
+    claim="Sally is a pretty cat",
+    sources=sources,
+)
+
+# 4. Inspect the overall verdict
+if ruling.verdict is Verdict.SUPPORTS:
+    print("Sally really is a pretty cat!")
+elif ruling.verdict is Verdict.CONTRADICTS:
+    print("Evidence contradicts this claim!")
+else:
+    print("Evidence is inconclusive.")
+
+# 5. Examine individual statements and influences
+for statement in ruling.statements:
+    print(f'Statement: "{statement.text}" -> {statement.verdict}')
+    for influence in statement.influences:
+        print(f"  Influence from: {influence.source}")
+        print(f"  Content: {influence.text}")
+        if isinstance(influence, TextInfluence):
+            print(f"  Span indices: {influence.span[0]} - {influence.span[1]}")
 ```
 
-If you attempt to run Mintlify on a port that's already in use, it will use the next available port:
+* **`Client.from_url(...)`** targets the Gateway’s API Server endpoint (e.g., `http://localhost:5000`).
 
-```md
-Port 3000 is already in use. Trying 3001 instead.
-```
+* **`TextSource.from_text(...)`** constructs each piece of textual evidence. You can have multiple sources in a single call.
 
-## Mintlify Versions
+* **`ruling = client.judge(...)`** returns a rich response containing:- **`ruling.verdict`**: the overall truthfulness verdict.
 
-Please note that each CLI release is associated with a specific version of Mintlify. If your local website doesn't align with the production version, please update the CLI:
+  - **`ruling.statements`**: sub-statements derived from the original claim, each with its own verdict.
 
-<CodeGroup>
+  - **`statements[i].influences`**: the pieces of textual evidence that influenced the statement’s verdict.
 
-```bash npm
-npm i -g mintlify@latest
-```
+## High-Level Workflow
 
-```bash yarn
-yarn global upgrade mintlify
-```
+1. **Start** the API and Inference servers (see separate document for Docker instructions).
 
-</CodeGroup>
+2. **Install** the `truthsys` Python package with `pip install truthsys` (or whichever means provided).
 
-## Validating Links
+3. **Write** your Python script or library code to:
 
-The CLI can assist with validating reference links made in your documentation. To identify any broken links, use the following command:
+   * Import the SDK components (`Client`, `TextSource`, etc.).
 
-```bash
-mintlify broken-links
-```
+   * Create a client pointing to your Gateway’s base URL.
 
-## Deployment
+   * Invoke `judge()` with a claim and supporting evidence.
 
-<Tip>
-  Unlimited editors available under the [Pro
-  Plan](https://mintlify.com/pricing) and above.
-</Tip>
+   * Process and interpret the returned `ruling`.
 
-If the deployment is successful, you should see the following:
-
-<Frame>
-  <img src="/images/checks-passed.png" style={{ borderRadius: '0.5rem' }} />
-</Frame>
-
-## Code Formatting
-
-We suggest using extensions on your IDE to recognize and format MDX. If you're a VSCode user, consider the [MDX VSCode extension](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) for syntax highlighting, and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for code formatting.
-
-## Troubleshooting
-
-<AccordionGroup>
-  <Accordion title='Error: Could not load the "sharp" module using the darwin-arm64 runtime'>
-
-    This may be due to an outdated version of node. Try the following:
-    1. Remove the currently-installed version of mintlify: `npm remove -g mintlify`
-    2. Upgrade to Node v19 or higher.
-    3. Reinstall mintlify: `npm install -g mintlify`
-  </Accordion>
-
-  <Accordion title="Issue: Encountering an unknown error">
-  
-    Solution: Go to the root of your device and delete the \~/.mintlify folder. Afterwards, run `mintlify dev` again.
-  </Accordion>
-</AccordionGroup>
-
-Curious about what changed in the CLI version? [Check out the CLI changelog.](https://www.npmjs.com/package/mintlify?activeTab=versions)
+With this approach, you can quickly integrate **Gateway** into a variety of applications—AI services, data processing pipelines, or end-user applications that require evidence-based claim checking.
