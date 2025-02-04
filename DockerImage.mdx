@@ -1,0 +1,129 @@
+---
+title: "Setting Up Your Docker Image"
+description: "This document covers how to run Gateway—both the API Server and the Inference Server—using Docker. By containerizing these services, you get a consistent, repeatable deployment that can be tested or deployed in various environments (local development, staging, production, etc.)."
+---
+
+## 1. Prerequisites
+
+1. **Docker** installed and running.
+   Refer to [Docker Docs]() to install Docker on your platform.
+
+2. (Optional) **Docker Compose**, if you prefer managing multiple containers via a single configuration file.
+
+## 2. Docker Images
+
+Typically, the system is split into two images (though they can be combined):
+
+1. **`truthsys/api-server:latest`**
+
+2. **`truthsys/inference-server:latest`**
+
+### Responsibilities
+
+* **API Server**: Runs a Flask+Gunicorn server on a specified port (often `5000`).
+
+* **Inference Server**: Handles evidence retrieval and re-ranking, served at a separate port (often `6000`).
+
+## 3. Pulling & Running the Docker Containers
+
+Depending on how your organization shares the images, you might have one combined image or two separate images (one for the API server and one for the Inference server). We will assume **two** images for clarity:
+
+* **`truthsys/api-server:latest`**
+
+* **`truthsys/inference-server:latest`**
+
+### 3.1 Option A: Using `docker run` Commands
+
+**Step 1. Run the Inference Server**
+
+```bash
+docker pull truthsys/inference-server:latest
+
+# Example run command. Adjust ports/ENV as needed.
+docker run -d \
+  --name inference_server \
+  -p 6000:6000 \
+  truthsys/inference-server:latest
+```
+
+**Step 2. Run the API Server**
+
+```bash
+docker pull truthsys/api-server:latest
+
+# Example run command. Adjust ports/ENV as needed.
+docker run -d \
+  --name api_server \
+  -p 5000:5000 \
+  --env INFERENCE_SERVER_URL=http://inference_server:6000 \
+  --link inference_server \
+  truthsys/api-server:latest
+
+```
+
+### 3.2 Option B: Using Docker Compose
+
+If you prefer a **`docker-compose.yml`** file to manage both servers at once:
+
+```yaml
+version: '3.8'
+services:
+  inference_server:
+    image: truthsys/inference-server:latest
+    container_name: inference_server
+    ports:
+      - "6000:6000"
+
+  api_server:
+    image: truthsys/api-server:latest
+    container_name: api_server
+    ports:
+      - "5000:5000"
+    environment:
+      INFERENCE_SERVER_URL: "http://inference_server:6000"
+    depends_on:
+      - inference_server
+```
+
+Then run:&#x20;
+
+```bash
+docker compose up -d
+```
+
+## 4. Verifying Gateway is Running
+
+Once both containers are running, check:
+
+```bash
+docker ps
+```
+
+You should see two containers, `api_server` and `inference_server`, in the `Up` state.
+
+You can also **curl** or **wget** the health endpoint on the **API Server**:
+
+```bash
+curl http://localhost:5000/health
+```
+
+## 5. Additional Tips
+
+1. **Environment Variables**:
+
+   * `INFERENCE_SERVER_URL` must be set so the API Server knows where to send data.
+
+   * Other variables (like `LOG_LEVEL`, `DB_URI`) may be configurable depending on your team’s setup.
+
+2. **Port Conflicts**:
+   If `5000` or `6000` is already in use on your host, change the host port mapping. For instance `-p 8080:5000` would expose the API Server on `http://localhost:8080` while the container still listens on `5000`.
+
+3. **Scaling**:
+
+   * Production deployments might run multiple API Server or Inference Server containers behind a load balancer.
+
+   * Docker Compose supports scaling (e.g., `docker compose up --scale api_server=3`), or you can look into Kubernetes for more robust orchestration.
+
+4. **Connecting from the Python SDK**:
+
+   * Point your SDK client to the exposed API Server address: `Client.from_url("http://localhost:5000")` (or whichever port you’ve mapped).
