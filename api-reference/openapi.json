@@ -1,195 +1,187 @@
 {
-  "openapi": "3.0.1",
-  "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
-  },
-  "servers": [
-    {
-      "url": "http://sandbox.mintlify.com"
-    }
-  ],
-  "security": [
-    {
-      "bearerAuth": []
-    }
-  ],
-  "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
-          }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
-              }
-            }
-          }
-        ]
-      },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
-      }
-    }
-  }
+	"info": {
+		"_postman_id": "59b98963-aca8-4742-9d3b-852bcd357234",
+		"name": "Truth System's API documentation",
+		"description": "## **Getting started guide**\n\nWe'll discuss details of installation later, but, essentially, we will provide a docker image which you can then deploy on-premises to have a local server that can be interacted via HTTP requests (as outlined below). Please contact us for further documentation regarding deployment and scaling.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "41779734"
+	},
+	"item": [
+		{
+			"name": "get_context_output",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"params\": {\n        \"claim\": \"Nam is from LA.\",\n        \"sources\": [{\n            \"id\": \"\", \n            \"text\": \"Nam said he is not from LA but he actually is from Vietnam\"\n        }]\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://104.171.202.10:3000/api/get_context_output",
+					"protocol": "http",
+					"host": [
+						"104",
+						"171",
+						"202",
+						"10"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"get_context_output"
+					]
+				},
+				"description": "One recommendation we have about the claim is that each claim should be divded into the baseline sentence (however defined). That is because we make one final verdict on the outcome of the claim, in the order:\n\n```\nRefuted claims is a \"final_verdict\" of 0. \nUnsupported claims is a \"final_verdict\" of 1. \nSupported claims is a \"final_verdict\" of 2. \n\n ```\n\nEach element of the \"detailed_response\" is what we call an atomic labelling. Every claim can be broken into its constituent baseline ('atomic') facts. A trivial example:\n\n```\nThe blue house is wobbly -> (1) the house is blue (2) the house is wobbly\n\n ```\n\nFor every atomic, we make a prediction, wherein the prediction_vector\\[prediction_num\\] is the confidence we have in that prediction.\n\nWe also retrieve a list of the top 5 most relevant 'chunks' of texts in the context window, each with an associated relevance score. We plan to reformat this output schema to be more readable (as this is highly convenient for internal tooling, but not so much for understanding)."
+			},
+			"response": [
+				{
+					"name": "Simple Supports Example",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"params\": {\n        \"claim\": \"Sally is from New York.\",\n        \"sources\": [\n            {\"id\": \"Sally's Document\", \"text\": \"Sally is from New York.\"}, \n            {\"id\": \"James' Document\", \"text\": \"James is from California.\"}\n        ]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{base_url}}/api/get_context_output",
+							"protocol": "http",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"get_context_output"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "Werkzeug/2.2.2 Python/3.8.19"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 08 Apr 2024 08:31:19 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "386"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Connection",
+							"value": "close"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"detailed_responses\": [\n        {\n            \"atomic\": \"Sally is from New York.\",\n            \"prediction\": \"SUPPORTS\",\n            \"prediction_num\": 2,\n            \"prediction_vector\": [\n                0.007228851318359375,\n                0.0,\n                0.99267578125\n            ],\n            \"span\": [\n                0,\n                23\n            ],\n            \"top5_sentences\": [\n                [\n                    \"Sally is from New York.\",\n                    \"James is from California.\"\n                ],\n                [\n                    \"Sally's Document\",\n                    \"James' Document\"\n                ],\n                [\n                    [\n                        13.2890625\n                    ],\n                    [\n                        -6.69140625\n                    ]\n                ],\n                [\n                    [\n                        0,\n                        23\n                    ],\n                    [\n                        0,\n                        25\n                    ]\n                ]\n            ]\n        }\n    ],\n    \"sentences\": [\n        {\n            \"evidence\": {\n                \"ids\": [\n                    \"Sally's Document\"\n                ],\n                \"scores\": [\n                    [\n                        13.2890625\n                    ]\n                ],\n                \"source_spans\": [\n                    [\n                        0,\n                        23\n                    ]\n                ]\n            },\n            \"span\": [\n                0,\n                23\n            ],\n            \"verdict\": 2\n        }\n    ]\n}"
+				},
+				{
+					"name": "Simple Refutes Example",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"params\": {\n        \"claim\": \"Sally is from not from New York.\",\n        \"sources\": [\n            {\"id\": \"Sally's Document\", \"text\": \"Sally is from New York.\"}, \n            {\"id\": \"James' Document\", \"text\": \"James is from California.\"}\n        ]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{base_url}}/api/get_context_output",
+							"protocol": "http",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"get_context_output"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "Werkzeug/2.2.2 Python/3.8.19"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 08 Apr 2024 08:48:21 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "388"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Connection",
+							"value": "close"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"detailed_responses\": [\n        {\n            \"atomic\": \"Sally is from not from New York.\",\n            \"prediction\": \"REFUTES\",\n            \"prediction_num\": 0,\n            \"prediction_vector\": [\n                0.9853515625,\n                0.0,\n                0.014862060546875\n            ],\n            \"span\": [\n                0,\n                32\n            ],\n            \"top5_sentences\": [\n                [\n                    \"Sally is from New York.\",\n                    \"James is from California.\"\n                ],\n                [\n                    \"Sally's Document\",\n                    \"James' Document\"\n                ],\n                [\n                    [\n                        8.8671875\n                    ],\n                    [\n                        -4.17578125\n                    ]\n                ],\n                [\n                    [\n                        0,\n                        23\n                    ],\n                    [\n                        0,\n                        25\n                    ]\n                ]\n            ]\n        }\n    ],\n    \"sentences\": [\n        {\n            \"evidence\": {\n                \"ids\": [\n                    \"Sally's Document\"\n                ],\n                \"scores\": [\n                    [\n                        8.8671875\n                    ]\n                ],\n                \"source_spans\": [\n                    [\n                        0,\n                        23\n                    ]\n                ]\n            },\n            \"span\": [\n                0,\n                32\n            ],\n            \"verdict\": 0\n        }\n    ]\n}"
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "BASE_URL"
+		}
+	]
 }
