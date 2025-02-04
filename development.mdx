@@ -71,8 +71,6 @@ client = Client.from_url("http://localhost:5000")
 
 **If you have modified the default port or are running on a remote server, adjust the URL accordingly.**
 
-
-
 ## 4. Python SDK:
 
 On top of this backend, a **Python SDK** offers a high-level interface to interact with Gateway programmatically.
@@ -141,9 +139,9 @@ for statement in ruling.statements:
 
 * **`ruling = client.judge(...)`** returns a rich response containing:- **`ruling.verdict`**: the overall truthfulness verdict.
 
-  - **`ruling.statements`**: sub-statements derived from the original claim, each with its own verdict.
+  * **`ruling.statements`**: sub-statements derived from the original claim, each with its own verdict.
 
-  - **`statements[i].influences`**: the pieces of textual evidence that influenced the statement’s verdict.
+  * **`statements[i].influences`**: the pieces of textual evidence that influenced the statement’s verdict.
 
 ## High-Level Workflow
 
